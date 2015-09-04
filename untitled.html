@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>jQuery.getJSON demo</title>
+  <style>
+  img {
+    height: 100px;
+    float: left;
+  }
+  </style>
+</head>
+<body>
+<div id="results">Stuff</div>
+
+<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script>
+  $.ajax({
+  url:"https://www.kimonolabs.com/api/2ou22r7q?apikey=OOckE2QltIVVGg3RLMXx9fQque4MWaH6",
+  crossDomain: true,
+  dataType: "jsonp",
+  processData: true,
+  success: function (result) {
+    //Do something with the response
+    //console.log(result);
+    return(result);
+    $('#results').html(result);
+  },
+  error: function (xhr, status) {
+    //handle errors
+    console.log('it did not work, do someothing about it');
+  }
+  
+});
+  </script>
+ 
+</body>
+</html>
