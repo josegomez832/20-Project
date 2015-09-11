@@ -46,145 +46,192 @@
   	width:100%;
   	height:400px;
   }
+  h1#error{
+    display: none;
+  }
+  h1.view{
+    display: block;
+  }
   </style>
   <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
-  <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
-  
+  <script src="//code.jquery.com/jquery-migrate-1.2.1.min.js"></script>  
   <script src="moment.js"></script>
   <script src="livestamp.js"></script>
   <script src="Chart.min.js"></script>
   <script src="js/history.js"></script>
+  <script src="js/jquery.jscroll.min.js"></script>
   <link rel="stylesheet" href="css/rzslider.css" />
   <link rel="stylesheet" href="css/demo.css" />
+  <link href="bootstrap/css/bootstrap.css" rel="stylesheet" >
 </head>
 <body ng-controller="MainCtrl">
-   <form action="results.php" method="get">
-    <input type="text" id="location" placeholder="Search City" name="location"/>
-    <button type="submit">Submit</button>
-  </form>
+  <div class="wrapper">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4">
+          <a href="/20-Project/">Logo here</a>
+        </div>
+
+        <div class="col-md-8">
+           <form action="results.php" method="get">
+            <input type="text" id="location" placeholder="Search City" name="location"/>
+            <button type="submit">Submit</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="controls">
+    <div class="container">
+      <div class="row">
+        <select id="range">
+          <option value="1000">1 Mile</option>
+          <option value="2000">2 Mile</option>
+          <option value="3000">3 Mile</option>
+          <option value="4000">4 Mile</option>
+          <option value="5000">5 Mile</option>
+        </select>
+        
+      </div>
+    </div>
+  </div>
+  <h1 id="error">Sorry, try a better search...like a actual city</h1>
+  
   <div id="google"></div>
   <div id="feed">
-    <ul></ul>
+    <ul class="jscroll"></ul>
   </div>
-  <p id="demo"></p>
-  {{ slider_data.value }}   
-  <rzslider
-                    rz-slider-floor="1"
-                    rz-slider-ceil="5"
-                    rz-slider-step="1"
-                    rz-slider-precision="1"
-                    rz-slider-model="slider_data.value"
-                    rz-slider-on-change="onChange()"></rzslider>
 
-
-
-
-<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAKB7Oy4gwlex36Tm9Pq676FR6C8fwJq7k"></script>
+<script type="text/javascript" src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAKB7Oy4gwlex36Tm9Pq676FR6C8fwJq7k"></script> 
 <script type="text/javascript">
+      
       var mapurl = "https://maps.googleapis.com/maps/api/geocode/json?address=<?php echo urlencode($_GET['location']);?>";
+      var gmaps = "https://maps.googleapis.com/maps/api/js?key=AIzaSyAKB7Oy4gwlex36Tm9Pq676FR6C8fwJq7k";
       var glat;
       var glng;
-      var url;
-      var base = "https://api.instagram.com/v1/media/search?lat=";
-      var mid = "&lng=";
-      var endpoint = "&distance=1000&client_id=<?php echo $client_id; ?>&count=40&callback=?";
-      var insta = base + glat + mid + glng + endpoint;
-      console.log(insta);
+      var url;     
 
+
+      var allOfIt = function(callback){
       //Google maps latitude and coordinates
-      $.getJSON(mapurl, function (google) {
-        glat = google.results[0].geometry.location.lat;
-        glng = google.results[0].geometry.location.lng;
-
-        url = "https://api.instagram.com/v1/media/search?lat=" + glat + "&lng=" + glng + "&distance=1000&client_id=<?php echo $client_id; ?>&count=40&callback=?";
-        //This pulls the instagram images
-  
-
-        //Instagram Feed
-        $.getJSON(url, function (response) {
-          //http://techmonks.net/instagram-using-the-api/
-          for(var i = 0; i < 40; i++){
-            $("#feed ul").append("<li><a target='_blank' href='"+response.data[i].link +"'><img src='"+response.data[i].images.low_resolution.url+"'/></a></li>");
-            }
-        }); //end of response url $.getJSON requests      
-        
-
-
-        //Google maps integration
-        $.getJSON(url, function (data) {
-          function updateCoor(){
-            console.log('updateCoor()');
-          }
-            var coor1 = data.data[1].location.latitude;
-            var coor2 = data.data[1].location.longitude;
-
-          function initialize() {
-            //Gets locations in array
-            var locations = [];
-            var userInfo = data.length;//for some reason this does not work
-            for(var a = 0; a < 40; a++){
-                var name = data.data[a].user.username;
-                var lat = data.data[a].location.latitude;
-                var lng = data.data[a].location.longitude;
-                var mapStuff = [name, lat, lng];
-                locations.push(mapStuff);          
-              }
-            
-            //$('#demo').html("lat="+coor1+"lng="+coor2);//just testing
-            var coordinates = new google.maps.LatLng(coor1, coor2);
-
-            var map = new google.maps.Map(document.getElementById('google'),{
-              zoom: 10,
-              center: coordinates           
+        $.getJSON(mapurl, function (google) {
+          if( google.results[0] == null){
+            $('#error').css('display', 'block');
+            $('#google').css('display', 'none');
+            var tagSearch = "https://api.instagram.com/v1/tags/<?php echo $_GET['location'];?>/media/recent?access_token=<?php echo $token; ?>";
+            $.getJSON(tagSearch, function (tag){
+              for(var i = 0; i < 40; i++){
+                $("#feed ul").append("<li><a target='_blank' href='" + tag.data[i].link + "'><img src='"+tag.data[i].images.low_resolution.url+"'/></a></li>");
+                }
             });
+            console.log('searching for tags');
+            //code for results that are not location based
+            //console.log('Sorry search for a city');
+            
+          } else {
+            glat = google.results[0].geometry.location.lat;
+            glng = google.results[0].geometry.location.lng;
+            console.log('Google: ' + glat, glng);
+            //This variable needs to be updated with new coordinates when map is moved
+            //so it needs to be refered back to from outside the function
+            //the new coordinates should update the feed and the icons on the map
+            url = instagramURL(url);
 
-            var infowindow = new google.maps.InfoWindow();
-            var marker, i;
-            var markers = new Array();
-            for (i=0; i<locations.length;i++){
-              marker = new google.maps.Marker({
-              position: new google.maps.LatLng(locations[i][1], locations[i][2]),
-              map:map,
-              animation: google.maps.Animation.DROP
-            });      
-          
-            markers.push(marker);
-            google.maps.event.addListener(marker, 'click', (function(marker, i){
-              return function(){
-              infowindow.setContent(locations[i][0]);
-                  infowindow.open(map, marker);
-                  }
-                })(marker, i));
-              } 
+            function instagramURL(url){
+              
+              url = "https://api.instagram.com/v1/media/search?lat=" + glat + "&lng=" + glng + "&distance=1000&client_id=<?php echo $client_id; ?>&count=40&callback=?";
+              return url;
+            }
+            
 
-              google.maps.event.addListener(map, 'dragend', function(){
-                  var control_center = map.getCenter();
-                  var lng = control_center.lng();
-                  var lat = control_center.lat();
-                  console.log('dragend');
-                  updateCoor();
-              });
-          }
-          initialize();
-      });        
-    });  //end of mapurl google $.getJSON requests
+            //Instagram Feed
+            $.getJSON(url, function (response) {
+              for(var i = 0; i < 40; i++){
+                $("#feed ul").append("<li><a target='_blank' href='" + response.data[i].link + "'><img src='"+response.data[i].images.low_resolution.url+"'/></a></li>");
+                }
+            }); //end of response url $.getJSON requests            
+            callback(url);        
+          }  //else              
+      });  //end of mapurl google $.getJSON requests
+    }//end of allofit
+    function updateCoor(glat){
+      console.log('updateCoor()');
+      console.log('updateGoogle()');
+      //instagramURL();
+      //this will update coordinates to update the feed
+      // console.log(base + ilat + lat + ilng + lng + endpoint);
+    }
+    allOfIt(function(value){      
+       $.getJSON(value, function (data) {                  
+                  //console.log(value);
 
+                  function initialize(){              
+                      //Gets locations in array
+                      var locations = [];                      
+                      for(var a = 0; a < data.data.length; a++){
+                          var name = data.data[a].user.username;
+                          var lat = data.data[a].location.latitude;
+                          var lng = data.data[a].location.longitude;
+                          var mapStuff = [name, lat, lng];
+                          locations.push(mapStuff);                            
+                        }
+                                      
+                      var coordinates = new google.maps.LatLng(glat, glng);
 
+                      var map = new google.maps.Map(document.getElementById('google'),{
+                        zoom: 10,
+                        center: coordinates           
+                      });
+
+                      var infowindow = new google.maps.InfoWindow();
+                      var marker, i;
+                      var markers = new Array();
+                      for (i=0; i<locations.length;i++){
+                        marker = new google.maps.Marker({
+                        position: new google.maps.LatLng(locations[i][1], locations[i][2]),
+                        map:map,
+                        animation: google.maps.Animation.DROP
+                      });      
+                    
+                      markers.push(marker);
+                      google.maps.event.addListener(marker, 'click', (function(marker, i){
+                        return function(){
+                        infowindow.setContent(locations[i][0]);
+                            infowindow.open(map, marker);
+                            }
+                          })(marker, i));
+                        } 
+                        function AutoCenter() {
+                          //  Create a new viewpoint bound    
+                          var bounds = new google.maps.LatLngBounds();        
+                          //  Go through each...
+                          $.each(markers, function (index, marker) {
+                            bounds.extend(marker.position);
+                            console.log('autoCenter()');
+                            });
+                          //  Fit these bounds to the map
+                          map.fitBounds(bounds);              
+                          }
+                        AutoCenter();   
+
+                        google.maps.event.addListener(map, 'dragend', function (){   
+                           
+                              var control_center = map.getCenter();
+                              glng = control_center.lng();
+                              glat = control_center.lat(); 
+                              
+                                                                            
+                          //return glat, glng;
+                          console.log('dragend');
+                          console.log(glng, glat);
+                          updateCoor();
+                          
+                        });
+                        
+                    }
+                    google.maps.event.addDomListener(window, 'load', initialize);                 
+              });          
+          })   
 </script>   
-<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.4.4/angular.min.js"></script>
-<script src="js/rzslider.js"></script>
-<script>
-    var app = angular.module('plunker', ['rzModule']);
-    app.controller('MainCtrl', function($scope)
-    {             
-      $scope.slider_data = {value: 1};
-      $scope.otherData = {value: 10};
-
-      $scope.onChange = function() {
-        console.info('changed', $scope.slider_data.value);
-        $scope.otherData.value = $scope.slider_data.value * 10;
-      };
-    });
-</script>
 </body>
 </html>
